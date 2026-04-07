@@ -124,8 +124,35 @@
     color: #333;
 }
 
-.author {
+//* Author Name (Title field only) */
+.author-name {
     font-weight: 600;
     color: #555;
     font-size: 1.1rem;
+    margin: 12px 0 8px 0;
+}
+
+/* Job Title + Company */
+.testimonial-meta {
+    color: #777;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+
+.testimonial-meta .job-title {
+    font-style: italic;
+}
+
+.testimonial-meta .company {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.testimonial-meta .company:hover {
+    text-decoration: underline;
+}
+
+/* Hide only the main author name when toggled off */
+.testimonial-rotator[data-show-title="0"] .author-name {
+    display: none;
 }
