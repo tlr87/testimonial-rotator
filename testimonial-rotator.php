@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       Testimonial Rotator
- * Description:       Rotates testimonials with customizable interval, pause on hover, and fade/slide transitions.
- * Version:           1.3
+ * Description:       Beautiful rotating testimonials with speed control, transitions, pause on hover, arrows & dots (toggleable).
+ * Version:           1.5
  * Author:            Grok
  */
 
@@ -24,11 +24,13 @@ function tr_register_testimonial_cpt() {
 }
 add_action('init', 'tr_register_testimonial_cpt');
 
-// Settings
+// Register Settings
 function tr_register_settings() {
     register_setting('tr_settings_group', 'tr_interval');
     register_setting('tr_settings_group', 'tr_unit');
     register_setting('tr_settings_group', 'tr_transition');
+    register_setting('tr_settings_group', 'tr_show_arrows', ['default' => '1']);
+    register_setting('tr_settings_group', 'tr_show_dots',   ['default' => '1']);
 }
 add_action('admin_init', 'tr_register_settings');
 
@@ -48,7 +50,6 @@ function tr_settings_page_html() {
     <div class="wrap">
         <h1>Testimonial Rotator</h1>
         
-        <!-- Settings Form -->
         <form method="post" action="options.php">
             <?php settings_fields('tr_settings_group'); ?>
             <h2>General Settings</h2>
@@ -63,57 +64,70 @@ function tr_settings_page_html() {
                             <option value="hours"   <?php selected(get_option('tr_unit', 'seconds'), 'hours');   ?>>hours</option>
                             <option value="months"  <?php selected(get_option('tr_unit', 'seconds'), 'months');  ?>>months</option>
                         </select>
-                        <p class="description">Default rotation speed for all rotators.</p>
                     </td>
                 </tr>
                 <tr>
                     <th>Transition Type</th>
                     <td>
                         <select name="tr_transition">
-                            <option value="fade" <?php selected(get_option('tr_transition', 'fade'), 'fade'); ?>>Fade (smooth cross-fade)</option>
-                            <option value="slide" <?php selected(get_option('tr_transition', 'fade'), 'slide'); ?>>Slide (horizontal slide)</option>
+                            <option value="fade" <?php selected(get_option('tr_transition', 'fade'), 'fade'); ?>>Fade</option>
+                            <option value="slide" <?php selected(get_option('tr_transition', 'fade'), 'slide'); ?>>Slide</option>
                         </select>
-                        <p class="description">Default animation style.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Navigation Arrows</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="tr_show_arrows" value="1" <?php checked(get_option('tr_show_arrows', '1'), '1'); ?>>
+                            Show left/right arrows
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Navigation Dots</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="tr_show_dots" value="1" <?php checked(get_option('tr_show_dots', '1'), '1'); ?>>
+                            Show clickable dots at the bottom
+                        </label>
                     </td>
                 </tr>
             </table>
             <?php submit_button('Save Settings'); ?>
         </form>
 
-        <!-- How to Use Section -->
+        <!-- How to Use -->
         <div style="margin-top: 40px; background: #f9f9f9; padding: 25px; border: 1px solid #ddd; border-radius: 8px;">
             <h2>How to Use Testimonial Rotator</h2>
             
             <h3>1. Add Testimonials</h3>
-            <p>Go to <strong>Testimonials → Add New</strong> in the WordPress admin menu.</p>
+            <p>Go to <strong>Testimonials → Add New</strong>.</p>
             <ul>
-                <li><strong>Title</strong> → Name of the person (e.g., "Sarah Johnson")</li>
-                <li><strong>Content</strong> → The testimonial text/quote (you can use the visual editor or blocks)</li>
-                <li><strong>Featured Image</strong> → Optional avatar/photo (recommended 300×300px)</li>
+                <li><strong>Title</strong> → Person’s name</li>
+                <li><strong>Content</strong> → Testimonial quote</li>
+                <li><strong>Featured Image</strong> → Optional avatar</li>
             </ul>
 
-            <h3>2. Display the Rotating Testimonials</h3>
-            <p>Use this shortcode anywhere:</p>
+            <h3>2. Display</h3>
             <pre><code>[rotating-testimonials]</code></pre>
-            
-            <h3>3. Customize Per Instance</h3>
-            <pre><code>[rotating-testimonials interval="15" unit="seconds" transition="fade"]</code></pre>
-            <p>Available options: <code>interval</code>, <code>unit</code> (seconds/minutes/hours/months), <code>transition</code> (fade/slide)</p>
 
-            <h3>4. Pause on Hover</h3>
-            <p>Automatically pauses when the mouse hovers over the rotator.</p>
+            <h3>3. Customize Per Shortcode</h3>
+            <pre><code>[rotating-testimonials interval="15" unit="seconds" transition="slide" arrows="0" dots="1"]</code></pre>
+            <p>New parameters: <code>arrows</code> (1/0), <code>dots</code> (1/0)</p>
 
-            <h3>Tips</h3>
+            <h3>Features</h3>
             <ul>
-                <li>Add at least 2–3 testimonials.</li>
-                <li>Clear your site cache after changes if you use a caching plugin.</li>
+                <li>Auto-rotation with pause on hover</li>
+                <li>Fade or Slide transition</li>
+                <li>Navigation arrows &amp; dots (can be toggled)</li>
             </ul>
         </div>
     </div>
     <?php
 }
 
-// Helper: convert interval + unit → milliseconds
+// Convert to milliseconds
 function tr_calculate_ms($num, $unit) {
     $num = (int) $num;
     switch ($unit) {
@@ -125,18 +139,20 @@ function tr_calculate_ms($num, $unit) {
     }
 }
 
-// Shortcode - FIXED: Proper content rendering
+// Shortcode
 function tr_rotating_testimonials_shortcode($atts = []) {
     $atts = shortcode_atts([
         'interval'   => get_option('tr_interval', 10),
         'unit'       => get_option('tr_unit', 'seconds'),
         'transition' => get_option('tr_transition', 'fade'),
+        'arrows'     => get_option('tr_show_arrows', '1'),
+        'dots'       => get_option('tr_show_dots', '1'),
     ], $atts, 'rotating-testimonials');
 
     $ms = tr_calculate_ms($atts['interval'], $atts['unit']);
 
-    wp_enqueue_style('tr-style', plugin_dir_url(__FILE__) . 'css/testimonial-rotator.css', [], '1.3');
-    wp_enqueue_script('tr-script', plugin_dir_url(__FILE__) . 'js/testimonial-rotator.js', [], '1.3', true);
+    wp_enqueue_style('tr-style', plugin_dir_url(__FILE__) . 'css/testimonial-rotator.css', [], '1.5');
+    wp_enqueue_script('tr-script', plugin_dir_url(__FILE__) . 'js/testimonial-rotator.js', [], '1.5', true);
 
     $testimonials = get_posts([
         'post_type'      => 'testimonial',
@@ -146,32 +162,35 @@ function tr_rotating_testimonials_shortcode($atts = []) {
     ]);
 
     if (empty($testimonials)) {
-        return '<p>No testimonials found. Add some via the Testimonials menu!</p>';
+        return '<p>No testimonials found. Add some via the Testimonials menu.</p>';
     }
+
+    $show_arrows = filter_var($atts['arrows'], FILTER_VALIDATE_BOOLEAN);
+    $show_dots   = filter_var($atts['dots'],   FILTER_VALIDATE_BOOLEAN);
 
     $output = '<div class="testimonial-rotator" 
                     data-interval="' . esc_attr($ms) . '" 
-                    data-transition="' . esc_attr($atts['transition']) . '">';
+                    data-transition="' . esc_attr($atts['transition']) . '"
+                    data-show-arrows="' . ($show_arrows ? '1' : '0') . '"
+                    data-show-dots="'   . ($show_dots   ? '1' : '0') . '">';
 
     foreach ($testimonials as $t) {
         $author = $t->post_title ?: 'Anonymous';
-        
-        // FIXED: Properly render Gutenberg blocks and apply formatting
-        $text = apply_filters('the_content', $t->post_content);
-        
-        // Optional: Remove any remaining empty paragraphs if they appear
-        $text = preg_replace('/<p>\s*<\/p>/', '', $text);
-        
+        $text   = apply_filters('the_content', $t->post_content);
+        $text   = preg_replace('/<p>\s*<\/p>/', '', $text);
         $avatar = get_the_post_thumbnail_url($t->ID, 'thumbnail');
 
         $output .= '<div class="testimonial-item">';
-        if ($avatar) {
-            $output .= '<img src="' . esc_url($avatar) . '" alt="" class="testimonial-avatar">';
-        }
-        $output .= '<div class="quote">' . $text . '</div>';   // Note: no extra escaping here because the_content already outputs safe HTML
+        if ($avatar) $output .= '<img src="' . esc_url($avatar) . '" alt="" class="testimonial-avatar">';
+        $output .= '<div class="quote">' . $text . '</div>';
         $output .= '<div class="author">— ' . esc_html($author) . '</div>';
         $output .= '</div>';
     }
+
+    // Navigation controls (always output, JS will hide if disabled)
+    $output .= '<button class="tr-prev" aria-label="Previous testimonial">‹</button>';
+    $output .= '<button class="tr-next" aria-label="Next testimonial">›</button>';
+    $output .= '<div class="tr-dots"></div>';
 
     $output .= '</div>';
 

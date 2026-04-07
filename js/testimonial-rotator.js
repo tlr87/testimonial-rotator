@@ -12,38 +12,87 @@ document.addEventListener('DOMContentLoaded', function () {
         let timer;
         let isPaused = false;
 
-        function startTimer() {
-            if (timer) clearInterval(timer);
-            timer = setInterval(() => {
-                if (!isPaused) rotate();
-            }, intervalMs);
-        }
+        const prevBtn = rotator.querySelector('.tr-prev');
+        const nextBtn = rotator.querySelector('.tr-next');
+        const dotsContainer = rotator.querySelector('.tr-dots');
 
-        // Show first item
-        function showItem(index) {
-            items.forEach((item, i) => {
-                item.classList.remove('active', 'prev');
-                if (i === index) {
-                    item.classList.add('active');
-                }
+        const showArrows = rotator.dataset.showArrows === '1';
+        const showDots   = rotator.dataset.showDots   === '1';
+
+        // Create dots only if enabled
+        if (showDots) {
+            items.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('tr-dot');
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => goTo(index));
+                dotsContainer.appendChild(dot);
             });
         }
 
-        function rotate() {
-            let next = (current + 1) % items.length;
+        const dots = dotsContainer.querySelectorAll('.tr-dot');
 
-            if (transitionType === 'slide') {
-                // Prepare previous for slide-out
-                items[current].classList.add('prev');
-            }
-
-            showItem(next);
-            current = next;
+        function updateDots() {
+            if (!showDots) return;
+            dots.forEach((dot, i) => dot.classList.toggle('active', i === current));
         }
 
-        // Initial display
+        function showItem(index) {
+            items.forEach((item, i) => {
+                item.classList.remove('active', 'prev');
+                if (i === index) item.classList.add('active');
+            });
+            updateDots();
+        }
+
+        function rotate() {
+            if (isPaused) return;
+            let next = (current + 1) % items.length;
+            if (transitionType === 'slide') items[current].classList.add('prev');
+            current = next;
+            showItem(current);
+        }
+
+        function goTo(index) {
+            if (index === current) return;
+            if (transitionType === 'slide') items[current].classList.add('prev');
+            current = index;
+            showItem(current);
+            resetTimer();
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(rotate, intervalMs);
+        }
+
+        function resetTimer() {
+            if (timer) clearInterval(timer);
+            startTimer();
+        }
+
+        // Initialize
         showItem(0);
         startTimer();
+
+        // Button events (only if arrows enabled)
+        if (showArrows) {
+            prevBtn.addEventListener('click', () => {
+                let prev = (current - 1 + items.length) % items.length;
+                if (transitionType === 'slide') items[current].classList.add('prev');
+                current = prev;
+                showItem(current);
+                resetTimer();
+            });
+
+            nextBtn.addEventListener('click', () => {
+                let next = (current + 1) % items.length;
+                if (transitionType === 'slide') items[current].classList.add('prev');
+                current = next;
+                showItem(current);
+                resetTimer();
+            });
+        }
 
         // Pause on Hover
         rotator.addEventListener('mouseenter', () => {
