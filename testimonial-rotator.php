@@ -1,8 +1,8 @@
 <?php
 /**
  * Plugin Name:       Testimonial Rotator
- * Description:       Rotating testimonials with customizable speed, transitions, arrows & dots, separate Title, Job Title, Company, and per-testimonial link.
- * Version:           2.3
+ * Description:       Rotating testimonials with customizable speed, transitions, arrows & dots, separate Title, Job Title, Company, and Read More link button.
+ * Version:           2.5
  * Author:            Grok
  * License:           GPL-2.0+
  * Text Domain:       testimonial-rotator
@@ -26,7 +26,7 @@ function tr_register_testimonial_cpt() {
 }
 add_action('init', 'tr_register_testimonial_cpt');
 
-// Meta boxes for Job Title, Company, and Link
+// Meta boxes
 function tr_add_testimonial_meta_boxes() {
     add_meta_box(
         'tr_testimonial_meta',
@@ -45,7 +45,7 @@ function tr_testimonial_meta_callback($post) {
     $job_title   = get_post_meta($post->ID, '_tr_job_title', true);
     $company     = get_post_meta($post->ID, '_tr_company', true);
     $company_url = get_post_meta($post->ID, '_tr_company_url', true);
-    $link_url    = get_post_meta($post->ID, '_tr_link_url', true);   // New: Link URL
+    $link_url    = get_post_meta($post->ID, '_tr_link_url', true);
     ?>
     <p>
         <label for="tr_job_title"><strong>Job Title / Position</strong></label><br>
@@ -60,9 +60,9 @@ function tr_testimonial_meta_callback($post) {
         <input type="url" id="tr_company_url" name="tr_company_url" value="<?php echo esc_attr($company_url); ?>" style="width:100%;">
     </p>
     <p>
-        <label for="tr_link_url"><strong>Link URL</strong> (optional)</label><br>
+        <label for="tr_link_url"><strong>Link URL for "Read More" button</strong> (optional)</label><br>
         <input type="url" id="tr_link_url" name="tr_link_url" value="<?php echo esc_attr($link_url); ?>" style="width:100%;">
-        <span class="description">When filled, clicking the testimonial will open this URL in a new tab.</span>
+        <span class="description">If filled, a "Read More" button will appear.</span>
     </p>
     <?php
 }
@@ -75,7 +75,7 @@ function tr_save_testimonial_meta($post_id) {
     update_post_meta($post_id, '_tr_job_title',   sanitize_text_field($_POST['tr_job_title'] ?? ''));
     update_post_meta($post_id, '_tr_company',     sanitize_text_field($_POST['tr_company'] ?? ''));
     update_post_meta($post_id, '_tr_company_url', esc_url_raw($_POST['tr_company_url'] ?? ''));
-    update_post_meta($post_id, '_tr_link_url',    esc_url_raw($_POST['tr_link_url'] ?? ''));   // New
+    update_post_meta($post_id, '_tr_link_url',    esc_url_raw($_POST['tr_link_url'] ?? ''));
 }
 add_action('save_post_testimonial', 'tr_save_testimonial_meta');
 
@@ -133,20 +133,19 @@ function tr_settings_page_html() {
                 </tr>
                 <tr>
                     <th>Navigation Arrows</th>
-                    <td><label><input type="checkbox" name="tr_show_arrows" value="1" <?php checked(get_option('tr_show_arrows', '1'), '1'); ?>> Show left/right arrows</label></td>
+                    <td><label><input type="checkbox" name="tr_show_arrows" value="1" <?php checked(get_option('tr_show_arrows', '1'), '1'); ?>> Show arrows</label></td>
                 </tr>
                 <tr>
                     <th>Navigation Dots</th>
-                    <td><label><input type="checkbox" name="tr_show_dots" value="1" <?php checked(get_option('tr_show_dots', '1'), '1'); ?>> Show clickable dots at the bottom</label></td>
+                    <td><label><input type="checkbox" name="tr_show_dots" value="1" <?php checked(get_option('tr_show_dots', '1'), '1'); ?>> Show dots</label></td>
                 </tr>
                 <tr>
                     <th>Show Title</th>
                     <td>
                         <label>
                             <input type="checkbox" name="tr_show_title" value="1" <?php checked(get_option('tr_show_title', '1'), '1'); ?>>
-                            Show Title (main author name from the Title field)
+                            Show Title (main author name)
                         </label>
-                        <p class="description">Job Title and Company will continue to show even if Title is hidden.</p>
                     </td>
                 </tr>
             </table>
@@ -155,21 +154,7 @@ function tr_settings_page_html() {
 
         <div style="margin-top: 40px; background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
             <h2>How to Use Testimonial Rotator</h2>
-            
-            <h3>1. Adding Testimonials</h3>
-            <p>Go to <strong>Testimonials → Add New</strong>.</p>
-            <ul>
-                <li><strong>Title field</strong> → Person’s name (toggleable)</li>
-                <li><strong>Content</strong> → Testimonial quote</li>
-                <li><strong>Featured Image</strong> → Optional avatar</li>
-                <li><strong>Testimonial Details box</strong> → Job Title, Company Name, Company URL, and new <strong>Link URL</strong></li>
-            </ul>
-
-            <h3>2. Displaying</h3>
-            <pre><code>[rotating-testimonials]</code></pre>
-
-            <h3>New in v2.3</h3>
-            <p>Each testimonial can now have its own link. Clicking the testimonial opens the Link URL in a new tab.</p>
+            <p><strong>New in v2.5:</strong> Added "Read More" button. Fill the "Link URL" field in Testimonial Details to show the button.</p>
         </div>
     </div>
     <?php
@@ -187,7 +172,7 @@ function tr_calculate_ms($num, $unit) {
     }
 }
 
-// Shortcode - Added per-testimonial link support
+// Shortcode
 function tr_rotating_testimonials_shortcode($atts = []) {
     $atts = shortcode_atts([
         'interval'   => get_option('tr_interval', 10),
@@ -200,8 +185,8 @@ function tr_rotating_testimonials_shortcode($atts = []) {
 
     $ms = tr_calculate_ms($atts['interval'], $atts['unit']);
 
-    wp_enqueue_style('tr-style', plugin_dir_url(__FILE__) . 'css/testimonial-rotator.css', [], '2.3');
-    wp_enqueue_script('tr-script', plugin_dir_url(__FILE__) . 'js/testimonial-rotator.js', [], '2.3', true);
+    wp_enqueue_style('tr-style', plugin_dir_url(__FILE__) . 'css/testimonial-rotator.css', [], '2.5');
+    wp_enqueue_script('tr-script', plugin_dir_url(__FILE__) . 'js/testimonial-rotator.js', [], '2.5', true);
 
     $testimonials = get_posts([
         'post_type'      => 'testimonial',
@@ -230,7 +215,7 @@ function tr_rotating_testimonials_shortcode($atts = []) {
         $job_title   = get_post_meta($t->ID, '_tr_job_title', true);
         $company     = get_post_meta($t->ID, '_tr_company', true);
         $company_url = get_post_meta($t->ID, '_tr_company_url', true);
-        $link_url    = get_post_meta($t->ID, '_tr_link_url', true);   // New
+        $link_url    = get_post_meta($t->ID, '_tr_link_url', true);
 
         $is_default_title = empty($author) || preg_match('/^Testimonial \d+$/i', $author);
 
@@ -238,10 +223,7 @@ function tr_rotating_testimonials_shortcode($atts = []) {
         $text   = preg_replace('/<p>\s*<\/p>/', '', $text);
         $avatar = get_the_post_thumbnail_url($t->ID, 'thumbnail');
 
-        // Make the whole item clickable if link exists
-        $link_attr = !empty($link_url) ? ' data-link="' . esc_url($link_url) . '"' : '';
-
-        $output .= '<div class="testimonial-item"' . $link_attr . '>';
+        $output .= '<div class="testimonial-item">';
         if ($avatar) {
             $output .= '<img src="' . esc_url($avatar) . '" alt="" class="testimonial-avatar">';
         }
@@ -253,9 +235,7 @@ function tr_rotating_testimonials_shortcode($atts = []) {
 
         if (!empty($job_title) || !empty($company)) {
             $output .= '<div class="testimonial-meta">';
-            if (!empty($job_title)) {
-                $output .= '<span class="job-title">' . esc_html($job_title) . '</span>';
-            }
+            if (!empty($job_title)) $output .= '<span class="job-title">' . esc_html($job_title) . '</span>';
             if (!empty($company)) {
                 if (!empty($company_url)) {
                     $output .= ' <a href="' . esc_url($company_url) . '" target="_blank" class="company">' . esc_html($company) . '</a>';
@@ -264,6 +244,11 @@ function tr_rotating_testimonials_shortcode($atts = []) {
                 }
             }
             $output .= '</div>';
+        }
+
+        // Read More Button
+        if (!empty($link_url)) {
+            $output .= '<a href="' . esc_url($link_url) . '" target="_blank" class="tr-read-more">Read More →</a>';
         }
 
         $output .= '</div>';

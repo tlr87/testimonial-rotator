@@ -156,3 +156,28 @@
 .testimonial-rotator[data-show-title="0"] .author-name {
     display: none;
 }
+
+/* Read More Button */
+.tr-read-more {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 8px 18px;
+    background: #0073aa;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.tr-read-more:hover {
+    background: #005a87;
+    transform: translateY(-2px);
+}
+
+/* Make sure button doesn't interfere with navigation */
+.testimonial-item .tr-read-more {
+    position: relative;
+    z-index: 5;
+}
