@@ -87,6 +87,7 @@ function tr_register_settings() {
     register_setting('tr_settings_group', 'tr_show_arrows', ['default' => '1']);
     register_setting('tr_settings_group', 'tr_show_dots',   ['default' => '1']);
     register_setting('tr_settings_group', 'tr_show_title',  ['default' => '1']);
+    register_setting('tr_settings_group', 'tr_read_more_css');
 }
 add_action('admin_init', 'tr_register_settings');
 
@@ -148,14 +149,62 @@ function tr_settings_page_html() {
                         </label>
                     </td>
                 </tr>
+                <tr>
+                    <th>Read More Button Custom CSS</th>
+                        <td>
+                        <textarea name="tr_read_more_css" rows="6" style="width:100%; font-family: monospace;"><?php 
+                        echo esc_textarea(get_option('tr_read_more_css', ''));
+                        ?></textarea>
+                        <p class="description">
+                        Add CSS rules for the Read More button (.tr-read-more)
+                        </p>
+                    </td>
+                </tr>
             </table>
             <?php submit_button('Save Settings'); ?>
         </form>
 
         <div style="margin-top: 40px; background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
-            <h2>How to Use Testimonial Rotator</h2>
-            <p><strong>New in v2.5:</strong> Added "Read More" button. Fill the "Link URL" field in Testimonial Details to show the button.</p>
-        </div>
+        <h2>How to Use Testimonial Rotator</h2>
+
+        <p><strong>Step 1:</strong> Go to <strong>Testimonials → Add New</strong> and create your testimonials.</p>
+        
+        <p><strong>Step 2:</strong> Fill in the details:</p>
+        <ul style="list-style: disc; margin-left: 20px;">
+            <li><strong>Title:</strong> Author name</li>
+            <li><strong>Content:</strong> Testimonial text</li>
+            <li><strong>Featured Image:</strong> Avatar/photo (optional)</li>
+            <li><strong>Job Title & Company:</strong> Additional info (optional)</li>
+            <li><strong>Company URL:</strong> Link company name (optional)</li>
+            <li><strong>Read More URL:</strong> Adds a clickable button and makes the testimonial clickable</li>
+        </ul>
+
+        <p><strong>Step 3:</strong> Add the shortcode to any page or post:</p>
+        <code>[rotating-testimonials]</code>
+
+        <p><strong>Optional Shortcode Settings:</strong></p>
+        <ul style="list-style: disc; margin-left: 20px;">
+            <li><code>interval="5"</code> (number)</li>
+            <li><code>unit="seconds|minutes|hours|months"</code></li>
+            <li><code>transition="fade|slide"</code></li>
+            <li><code>arrows="true|false"</code></li>
+            <li><code>dots="true|false"</code></li>
+            <li><code>title="true|false"</code></li>
+        </ul>
+
+        <p><strong>Example:</strong></p>
+        <code>[rotating-testimonials interval="5" unit="seconds" transition="slide"]</code>
+
+        <hr>
+
+        <p><strong>Tips:</strong></p>
+        <ul style="list-style: disc; margin-left: 20px;">
+            <li>Clicking a testimonial will open the Read More link (if set)</li>
+            <li>The Read More button is optional and only appears when a URL is provided</li>
+            <li>Hover pauses rotation (desktop)</li>
+            <li>Swipe left/right on mobile to navigate</li>
+        </ul>
+    </div>
     </div>
     <?php
 }
@@ -248,7 +297,11 @@ function tr_rotating_testimonials_shortcode($atts = []) {
 
         // Read More Button
         if (!empty($link_url)) {
-            $output .= '<a href="' . esc_url($link_url) . '" target="_blank" class="tr-read-more">Read More →</a>';
+            $read_more_text = apply_filters('tr_read_more_text', 'Read More');
+
+            $output .= '<a href="' . esc_url($link_url) . '" target="_blank" rel="noopener noreferrer" class="tr-read-more">'
+                    . esc_html($read_more_text) .
+                    '</a>';
         }
 
         $output .= '</div>';
@@ -263,3 +316,17 @@ function tr_rotating_testimonials_shortcode($atts = []) {
     return $output;
 }
 add_shortcode('rotating-testimonials', 'tr_rotating_testimonials_shortcode');
+
+add_action('wp_head', function () {
+
+    $css = get_option('tr_read_more_css', '');
+
+    if (!empty($css)) {
+        echo '<style>
+        .testimonial-rotator .testimonial-item .tr-read-more {
+            ' . $css . '
+        }
+        </style>';
+    }
+
+}, 999);

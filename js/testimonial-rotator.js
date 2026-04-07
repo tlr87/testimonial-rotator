@@ -3,7 +3,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     rotators.forEach(rotator => {
         const items = rotator.querySelectorAll('.testimonial-item');
-        if (items.length <= 1) return;
+
+        // Handle single testimonial
+        if (items.length <= 1) {
+            items[0]?.classList.add('active');
+            return;
+        }
 
         let current = 0;
         const intervalMs = parseInt(rotator.dataset.interval) || 10000;
@@ -20,20 +25,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const showDots   = rotator.dataset.showDots   === '1';
 
         // Create dots
-        if (showDots) {
+        if (showDots && dotsContainer) {
             items.forEach((_, index) => {
                 const dot = document.createElement('div');
                 dot.classList.add('tr-dot');
                 if (index === 0) dot.classList.add('active');
+
                 dot.addEventListener('click', (e) => {
                     e.stopPropagation();
                     goTo(index);
                 });
+
                 dotsContainer.appendChild(dot);
             });
         }
 
-        const dots = dotsContainer.querySelectorAll('.tr-dot');
+        const dots = showDots ? dotsContainer.querySelectorAll('.tr-dot') : [];
 
         function updateDots() {
             if (!showDots) return;
@@ -53,14 +60,22 @@ document.addEventListener('DOMContentLoaded', function () {
         function rotate() {
             if (isPaused) return;
             let next = (current + 1) % items.length;
-            if (transitionType === 'slide') items[current].classList.add('prev');
+
+            if (transitionType === 'slide') {
+                items[current].classList.add('prev');
+            }
+
             current = next;
             showItem(current);
         }
 
         function goTo(index) {
             if (index === current) return;
-            if (transitionType === 'slide') items[current].classList.add('prev');
+
+            if (transitionType === 'slide') {
+                items[current].classList.add('prev');
+            }
+
             current = index;
             showItem(current);
             resetTimer();
@@ -82,27 +97,45 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Navigation buttons
         if (showArrows) {
-            prevBtn.addEventListener('click', (e) => {
+            prevBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
+
+                isPaused = true;
+                if (timer) clearInterval(timer);
+
                 let prev = (current - 1 + items.length) % items.length;
-                if (transitionType === 'slide') items[current].classList.add('prev');
+
+                if (transitionType === 'slide') {
+                    items[current].classList.add('prev');
+                }
+
                 current = prev;
                 showItem(current);
                 resetTimer();
             });
 
-            nextBtn.addEventListener('click', (e) => {
+            nextBtn?.addEventListener('click', (e) => {
                 e.stopPropagation();
+
+                isPaused = true;
+                if (timer) clearInterval(timer);
+
                 let next = (current + 1) % items.length;
-                if (transitionType === 'slide') items[current].classList.add('prev');
+
+                if (transitionType === 'slide') {
+                    items[current].classList.add('prev');
+                }
+
                 current = next;
                 showItem(current);
                 resetTimer();
             });
         }
 
-        // FIXED: Click handler for links - only on the currently active item
+        // Click handler (ignore buttons/links)
         function handleItemClick(e) {
+            if (e.target.closest('a, button')) return;
+
             const activeItem = rotator.querySelector('.testimonial-item.active');
             if (!activeItem) return;
 
@@ -112,10 +145,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Attach click to the entire rotator (but only trigger for active item)
         rotator.addEventListener('click', handleItemClick);
 
-        // Pause on Hover
+        // Pause on hover
         rotator.addEventListener('mouseenter', () => {
             isPaused = true;
             if (timer) clearInterval(timer);
@@ -125,5 +157,39 @@ document.addEventListener('DOMContentLoaded', function () {
             isPaused = false;
             startTimer();
         });
+
+        // Swipe support (mobile)
+        let startX = 0;
+        let endX = 0;
+
+        rotator.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+        });
+
+        rotator.addEventListener('touchend', (e) => {
+            endX = e.changedTouches[0].clientX;
+            const diff = startX - endX;
+
+            if (Math.abs(diff) > 50) {
+                if (diff > 0) {
+                    nextBtn?.click();
+                } else {
+                    prevBtn?.click();
+                }
+            }
+        });
+
+        // Pause when off-screen
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    if (!isPaused) startTimer();
+                } else {
+                    if (timer) clearInterval(timer);
+                }
+            });
+        }, { threshold: 0.3 });
+
+        observer.observe(rotator);
     });
 });
