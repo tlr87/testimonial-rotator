@@ -1,9 +1,11 @@
 <?php
 /**
  * Plugin Name:       Testimonial Rotator
- * Description:       Rotating testimonials with customizable speed, transitions, arrows & dots toggle, separate Title, Job Title, and Company fields.
- * Version:           2.1
+ * Description:       Rotating testimonials with customizable speed, transitions, arrows & dots, separate Title, Job Title, Company, and per-testimonial link.
+ * Version:           2.3
  * Author:            Grok
+ * License:           GPL-2.0+
+ * Text Domain:       testimonial-rotator
  */
 
 if (!defined('ABSPATH')) exit;
@@ -24,7 +26,7 @@ function tr_register_testimonial_cpt() {
 }
 add_action('init', 'tr_register_testimonial_cpt');
 
-// Meta boxes for Job Title and Company
+// Meta boxes for Job Title, Company, and Link
 function tr_add_testimonial_meta_boxes() {
     add_meta_box(
         'tr_testimonial_meta',
@@ -43,6 +45,7 @@ function tr_testimonial_meta_callback($post) {
     $job_title   = get_post_meta($post->ID, '_tr_job_title', true);
     $company     = get_post_meta($post->ID, '_tr_company', true);
     $company_url = get_post_meta($post->ID, '_tr_company_url', true);
+    $link_url    = get_post_meta($post->ID, '_tr_link_url', true);   // New: Link URL
     ?>
     <p>
         <label for="tr_job_title"><strong>Job Title / Position</strong></label><br>
@@ -55,7 +58,11 @@ function tr_testimonial_meta_callback($post) {
     <p>
         <label for="tr_company_url"><strong>Company Website URL</strong> (optional)</label><br>
         <input type="url" id="tr_company_url" name="tr_company_url" value="<?php echo esc_attr($company_url); ?>" style="width:100%;">
-        <span class="description">Leave empty if no link is needed.</span>
+    </p>
+    <p>
+        <label for="tr_link_url"><strong>Link URL</strong> (optional)</label><br>
+        <input type="url" id="tr_link_url" name="tr_link_url" value="<?php echo esc_attr($link_url); ?>" style="width:100%;">
+        <span class="description">When filled, clicking the testimonial will open this URL in a new tab.</span>
     </p>
     <?php
 }
@@ -68,17 +75,18 @@ function tr_save_testimonial_meta($post_id) {
     update_post_meta($post_id, '_tr_job_title',   sanitize_text_field($_POST['tr_job_title'] ?? ''));
     update_post_meta($post_id, '_tr_company',     sanitize_text_field($_POST['tr_company'] ?? ''));
     update_post_meta($post_id, '_tr_company_url', esc_url_raw($_POST['tr_company_url'] ?? ''));
+    update_post_meta($post_id, '_tr_link_url',    esc_url_raw($_POST['tr_link_url'] ?? ''));   // New
 }
 add_action('save_post_testimonial', 'tr_save_testimonial_meta');
 
-// Settings
+// Settings (unchanged)
 function tr_register_settings() {
     register_setting('tr_settings_group', 'tr_interval');
     register_setting('tr_settings_group', 'tr_unit');
     register_setting('tr_settings_group', 'tr_transition');
     register_setting('tr_settings_group', 'tr_show_arrows', ['default' => '1']);
     register_setting('tr_settings_group', 'tr_show_dots',   ['default' => '1']);
-    register_setting('tr_settings_group', 'tr_show_title',  ['default' => '1']); // Title only
+    register_setting('tr_settings_group', 'tr_show_title',  ['default' => '1']);
 }
 add_action('admin_init', 'tr_register_settings');
 
@@ -145,49 +153,29 @@ function tr_settings_page_html() {
             <?php submit_button('Save Settings'); ?>
         </form>
 
-        <!-- Updated How to Use / README Section -->
         <div style="margin-top: 40px; background: #f9f9f9; padding: 30px; border: 1px solid #ddd; border-radius: 8px;">
             <h2>How to Use Testimonial Rotator</h2>
             
             <h3>1. Adding Testimonials</h3>
-            <p>Go to <strong>Testimonials → Add New</strong> in the WordPress admin.</p>
+            <p>Go to <strong>Testimonials → Add New</strong>.</p>
             <ul>
-                <li><strong>Title field</strong> → Person’s name (this is the "Title" that can be toggled on/off)</li>
-                <li><strong>Content / Editor</strong> → The actual testimonial quote</li>
-                <li><strong>Featured Image</strong> → Optional avatar or photo (recommended square)</li>
-                <li><strong>Testimonial Details box</strong> → Fill in Job Title / Position, Company Name, and Company Website URL</li>
+                <li><strong>Title field</strong> → Person’s name (toggleable)</li>
+                <li><strong>Content</strong> → Testimonial quote</li>
+                <li><strong>Featured Image</strong> → Optional avatar</li>
+                <li><strong>Testimonial Details box</strong> → Job Title, Company Name, Company URL, and new <strong>Link URL</strong></li>
             </ul>
 
-            <h3>2. Displaying the Rotator</h3>
-            <p>Use this shortcode anywhere on your site:</p>
+            <h3>2. Displaying</h3>
             <pre><code>[rotating-testimonials]</code></pre>
 
-            <h3>3. Customizing the Rotator</h3>
-            <p>You can override settings on any individual shortcode:</p>
-            <pre><code>[rotating-testimonials interval="15" unit="seconds" transition="slide" arrows="0" dots="1" title="0"]</code></pre>
-
-            <h3>Available Options</h3>
-            <ul>
-                <li><code>interval</code> + <code>unit</code> → seconds, minutes, hours, months</li>
-                <li><code>transition</code> → fade or slide</li>
-                <li><code>arrows</code> → 1 or 0</li>
-                <li><code>dots</code> → 1 or 0</li>
-                <li><code>title</code> → 1 (show Title) or 0 (hide Title only)</li>
-            </ul>
-
-            <h3>Tips for Best Results</h3>
-            <ul>
-                <li>Leave the main <strong>Title</strong> field empty if you don’t want any name shown.</li>
-                <li>Use the Job Title and Company fields when you want to credit the person without showing their full name.</li>
-                <li>Job Title and Company will still appear even when Title is turned off.</li>
-                <li>Clear your site cache after changing settings.</li>
-            </ul>
+            <h3>New in v2.3</h3>
+            <p>Each testimonial can now have its own link. Clicking the testimonial opens the Link URL in a new tab.</p>
         </div>
     </div>
     <?php
 }
 
-// Helper: convert interval to milliseconds
+// Helper
 function tr_calculate_ms($num, $unit) {
     $num = (int) $num;
     switch ($unit) {
@@ -199,7 +187,7 @@ function tr_calculate_ms($num, $unit) {
     }
 }
 
-// Shortcode
+// Shortcode - Added per-testimonial link support
 function tr_rotating_testimonials_shortcode($atts = []) {
     $atts = shortcode_atts([
         'interval'   => get_option('tr_interval', 10),
@@ -212,8 +200,8 @@ function tr_rotating_testimonials_shortcode($atts = []) {
 
     $ms = tr_calculate_ms($atts['interval'], $atts['unit']);
 
-    wp_enqueue_style('tr-style', plugin_dir_url(__FILE__) . 'css/testimonial-rotator.css', [], '2.1');
-    wp_enqueue_script('tr-script', plugin_dir_url(__FILE__) . 'js/testimonial-rotator.js', [], '2.1', true);
+    wp_enqueue_style('tr-style', plugin_dir_url(__FILE__) . 'css/testimonial-rotator.css', [], '2.3');
+    wp_enqueue_script('tr-script', plugin_dir_url(__FILE__) . 'js/testimonial-rotator.js', [], '2.3', true);
 
     $testimonials = get_posts([
         'post_type'      => 'testimonial',
@@ -242,6 +230,7 @@ function tr_rotating_testimonials_shortcode($atts = []) {
         $job_title   = get_post_meta($t->ID, '_tr_job_title', true);
         $company     = get_post_meta($t->ID, '_tr_company', true);
         $company_url = get_post_meta($t->ID, '_tr_company_url', true);
+        $link_url    = get_post_meta($t->ID, '_tr_link_url', true);   // New
 
         $is_default_title = empty($author) || preg_match('/^Testimonial \d+$/i', $author);
 
@@ -249,18 +238,19 @@ function tr_rotating_testimonials_shortcode($atts = []) {
         $text   = preg_replace('/<p>\s*<\/p>/', '', $text);
         $avatar = get_the_post_thumbnail_url($t->ID, 'thumbnail');
 
-        $output .= '<div class="testimonial-item">';
+        // Make the whole item clickable if link exists
+        $link_attr = !empty($link_url) ? ' data-link="' . esc_url($link_url) . '"' : '';
+
+        $output .= '<div class="testimonial-item"' . $link_attr . '>';
         if ($avatar) {
             $output .= '<img src="' . esc_url($avatar) . '" alt="" class="testimonial-avatar">';
         }
         $output .= '<div class="quote">' . $text . '</div>';
 
-        // Title (main author name) - controlled separately
         if ($show_title && !$is_default_title && !empty($author)) {
             $output .= '<div class="author-name">— ' . esc_html($author) . '</div>';
         }
 
-        // Job Title + Company (always shown if filled)
         if (!empty($job_title) || !empty($company)) {
             $output .= '<div class="testimonial-meta">';
             if (!empty($job_title)) {

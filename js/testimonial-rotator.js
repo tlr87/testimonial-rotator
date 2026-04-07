@@ -19,13 +19,16 @@ document.addEventListener('DOMContentLoaded', function () {
         const showArrows = rotator.dataset.showArrows === '1';
         const showDots   = rotator.dataset.showDots   === '1';
 
-        // Create dots only if enabled
+        // Create dots
         if (showDots) {
             items.forEach((_, index) => {
                 const dot = document.createElement('div');
                 dot.classList.add('tr-dot');
                 if (index === 0) dot.classList.add('active');
-                dot.addEventListener('click', () => goTo(index));
+                dot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    goTo(index);
+                });
                 dotsContainer.appendChild(dot);
             });
         }
@@ -40,7 +43,9 @@ document.addEventListener('DOMContentLoaded', function () {
         function showItem(index) {
             items.forEach((item, i) => {
                 item.classList.remove('active', 'prev');
-                if (i === index) item.classList.add('active');
+                if (i === index) {
+                    item.classList.add('active');
+                }
             });
             updateDots();
         }
@@ -75,9 +80,10 @@ document.addEventListener('DOMContentLoaded', function () {
         showItem(0);
         startTimer();
 
-        // Button events (only if arrows enabled)
+        // Navigation buttons
         if (showArrows) {
-            prevBtn.addEventListener('click', () => {
+            prevBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 let prev = (current - 1 + items.length) % items.length;
                 if (transitionType === 'slide') items[current].classList.add('prev');
                 current = prev;
@@ -85,7 +91,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 resetTimer();
             });
 
-            nextBtn.addEventListener('click', () => {
+            nextBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 let next = (current + 1) % items.length;
                 if (transitionType === 'slide') items[current].classList.add('prev');
                 current = next;
@@ -93,6 +100,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 resetTimer();
             });
         }
+
+        // FIXED: Click handler for links - only on the currently active item
+        function handleItemClick(e) {
+            const activeItem = rotator.querySelector('.testimonial-item.active');
+            if (!activeItem) return;
+
+            const link = activeItem.dataset.link;
+            if (link) {
+                window.open(link, '_blank');
+            }
+        }
+
+        // Attach click to the entire rotator (but only trigger for active item)
+        rotator.addEventListener('click', handleItemClick);
 
         // Pause on Hover
         rotator.addEventListener('mouseenter', () => {
