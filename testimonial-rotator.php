@@ -102,6 +102,119 @@ function tr_add_settings_page() {
 }
 add_action('admin_menu', 'tr_add_settings_page');
 
+
+
+// ============================================================
+// Testimonials Admin Screen - Shortcode Copy
+// ============================================================
+
+function tr_add_testimonial_shortcode_to_admin_title() {
+
+    $screen = get_current_screen();
+
+    if (!$screen || $screen->post_type !== 'testimonial') {
+        return;
+    }
+
+    ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const heading = document.querySelector('.wrap h1');
+
+        if (!heading) {
+            return;
+        }
+
+        const control = document.createElement('span');
+
+        control.style.cssText = `
+            margin-left:15px;
+            font-size:14px;
+            font-weight:400;
+        `;
+
+        control.innerHTML = `
+            Copy:
+            <input
+                type="text"
+                value="[rotating-testimonials]"
+                readonly
+                style="
+                    width:220px;
+                    font-family:monospace;
+                    padding:3px 6px;
+                    margin-left:5px;
+                "
+            >
+            <button
+                type="button"
+                class="button"
+                style="margin-left:5px;"
+                id="tr-copy-testimonial-shortcode"
+            >
+                Copy
+            </button>
+                <a
+        href="<?php echo esc_url(admin_url('options-general.php?page=testimonial-rotator')); ?>"
+        class="button"
+        style="margin-left:5px;"
+    >
+        Settings
+    </a>
+        `;
+
+        heading.appendChild(control);
+
+        document
+            .getElementById('tr-copy-testimonial-shortcode')
+            .addEventListener('click', function () {
+
+                const input = control.querySelector('input');
+
+                const button = this;
+
+if (navigator.clipboard && window.isSecureContext) {
+
+    navigator.clipboard.writeText(input.value)
+        .then(function () {
+
+            button.innerText = 'Copied';
+
+            setTimeout(function () {
+                button.innerText = 'Copy';
+            }, 1500);
+
+        });
+
+} else {
+
+    input.select();
+    input.setSelectionRange(0, 99999);
+
+    document.execCommand('copy');
+
+    button.innerText = 'Copied';
+
+    setTimeout(function () {
+        button.innerText = 'Copy';
+    }, 1500);
+
+}
+
+            });
+
+    });
+    </script>
+    <?php
+}
+
+add_action(
+    'admin_footer-edit.php',
+    'tr_add_testimonial_shortcode_to_admin_title'
+);
+
+
 function tr_settings_page_html() {
     ?>
     <div class="wrap">

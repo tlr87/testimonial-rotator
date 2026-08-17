@@ -192,4 +192,104 @@ document.addEventListener('DOMContentLoaded', function () {
 
         observer.observe(rotator);
     });
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    const button = document.getElementById(
+        'tr-copy-shortcode-button'
+    );
+
+    const input = document.getElementById(
+        'tr-shortcode-field'
+    );
+
+    const message = document.getElementById(
+        'tr-copy-shortcode-message'
+    );
+
+
+    if (!button || !input || !message) {
+        return;
+    }
+
+
+    button.addEventListener('click', function () {
+
+        const shortcode = input.value;
+
+
+        if (
+            navigator.clipboard &&
+            window.isSecureContext
+        ) {
+
+            navigator.clipboard
+                .writeText(shortcode)
+                .then(function () {
+
+                    trShowCopyMessage();
+
+                })
+                .catch(function () {
+
+                    trFallbackCopy(input);
+
+                });
+
+        } else {
+
+            trFallbackCopy(input);
+
+        }
+
+    });
+
+
+    function trFallbackCopy(input) {
+
+        input.focus();
+
+        input.select();
+
+        input.setSelectionRange(
+            0,
+            input.value.length
+        );
+
+
+        try {
+
+            document.execCommand('copy');
+
+        } catch (error) {
+
+            /*
+             * If the browser refuses the automatic
+             * copy operation, leave the shortcode
+             * selected so the user can copy it manually.
+             */
+
+        }
+
+
+        trShowCopyMessage();
+
+    }
+
+
+    function trShowCopyMessage() {
+
+        message.style.display = 'block';
+
+
+        window.setTimeout(function () {
+
+            message.style.display = 'none';
+
+        }, 2000);
+
+    }
+
+});
+    
 });
