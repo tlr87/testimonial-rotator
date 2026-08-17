@@ -3,8 +3,9 @@
  * Plugin Name:       Testimonial Rotator
  * Description:       Rotating testimonials with customizable speed, transitions, arrows & dots, separate Title, Job Title, Company, and Read More link button.
  * Version:           2.5
- * Author:            Grok
- * License:           GPL-2.0+
+ * Author:            Tom Revill - RD3 Tech
+ * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       testimonial-rotator
  */
 
