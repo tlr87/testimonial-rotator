@@ -106,5 +106,13 @@ The shortcode accepts the following optional parameters.
 
 ### Rotation interval
 
-```text
 [rotating-testimonials interval="5"]
+
+## License
+
+Testimonial Rotator is licensed under the
+GNU General Public License version 2 or later (GPL-2.0-or-later).
+
+Copyright © 2026 Tom Revill / RD3 Tech.
+
+See the `LICENSE` file for the complete license text.
